@@ -16,7 +16,7 @@ public:
 	FVector rule1(AAgent* agent);
 	FVector rule2(AAgent* agent);
 	FVector rule3(AAgent* agent);
-	FVector wind();
+	FVector bound_position(AAgent* agent);
 	void limitVelocity(AAgent* agent);
 
 private:

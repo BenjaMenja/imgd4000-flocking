@@ -12,13 +12,12 @@ void UFlockingManager::Init( UWorld *world, UStaticMeshComponent *mesh ) {
             FRotator rotation = FRotator();
 
             FVector location = FVector();
-            location.X = FMath::Sin( incr * i ) * 550.f;
-            location.Y = FMath::Sin(incr * i) * 500.f;
-            location.Z = FMath::Cos( incr * i ) * 550.f;
+            location.X = FMath::Sin( incr * i ) * 150.f;
+            location.Z = FMath::Cos( incr * i ) * 150.f;
 
-            AAgent * agent = World->SpawnActor<AAgent>( location, rotation );
-            agent->Init( mesh, i );
-            Agents.Add( agent );
+            AAgent * agent = World->SpawnActor<AAgent>(location, rotation);
+            agent->Init(mesh, i);
+            Agents.Add(agent);
         }
     }
 
@@ -31,7 +30,7 @@ void UFlockingManager::Flock() {
         v1 = rule1(curAgent);
         v2 = rule2(curAgent);
         v3 = rule3(curAgent);
-        v4 = wind();
+        v4 = bound_position(curAgent);
 
         curAgent->Velocity = curAgent->Velocity + v1 + v2 + v3 + v4;
         limitVelocity(curAgent);
@@ -39,12 +38,10 @@ void UFlockingManager::Flock() {
 }
 
 FVector UFlockingManager::rule1(AAgent* agent) {
-    FVector perceivedCenter;
+    FVector perceivedCenter = FVector();
     for (AAgent* curAgent : Agents) {
         if (curAgent != agent) {
-            if ((curAgent->GetActorLocation() - agent->GetActorLocation()).Size() < 250) {
-                perceivedCenter = perceivedCenter + curAgent->GetActorLocation();
-            } 
+            perceivedCenter = perceivedCenter + curAgent->GetActorLocation();
         }
     }
 
@@ -53,11 +50,11 @@ FVector UFlockingManager::rule1(AAgent* agent) {
 }
 
 FVector UFlockingManager::rule2(AAgent* agent) {
-    FVector c = FVector(0);
+    FVector c = FVector();
     for (AAgent* curAgent : Agents) {
         if (curAgent != agent) {
-            if ((curAgent->GetActorLocation() - agent->GetActorLocation()).Size() < 250) {
-                c = c - ((curAgent->GetActorLocation() - agent->GetActorLocation()) / (curAgent->GetActorLocation() - agent->GetActorLocation()).Size());
+            if ((curAgent->GetActorLocation() - agent->GetActorLocation()).GetAbs().Size() < 300) {
+                c = c - (curAgent->GetActorLocation() - agent->GetActorLocation());
             }
         }
     }
@@ -65,7 +62,7 @@ FVector UFlockingManager::rule2(AAgent* agent) {
 }
 
 FVector UFlockingManager::rule3(AAgent* agent) {
-    FVector perceivedVelocity = FVector(0);
+    FVector perceivedVelocity = FVector();
 
     for (AAgent* curAgent : Agents) {
         if (curAgent != agent) {
@@ -74,18 +71,43 @@ FVector UFlockingManager::rule3(AAgent* agent) {
     }
 
     perceivedVelocity = perceivedVelocity / (Agents.Num() - 1);
-    return (perceivedVelocity - agent->Velocity) / 16;
-}
-
-FVector UFlockingManager::wind() {
-    return FVector(0.05, 0, 0);
+    return (perceivedVelocity - agent->Velocity) / 8;
 }
 
 void UFlockingManager::limitVelocity(AAgent* agent) {
-    float vlim = 50.0;
+    float vlim = 75.0;
     FVector v;
 
-    if (agent->Velocity.Size() > vlim) {
-        agent->Velocity = (agent->Velocity / agent->Velocity.Size()) * vlim;
+    if (agent->Velocity.GetAbs().Size() > vlim) {
+        agent->Velocity = (agent->Velocity / agent->Velocity.GetAbs().Size()) * vlim;
     }
+}
+
+FVector UFlockingManager::bound_position(AAgent* agent) {
+    int32 Xmin = -5000;
+    int32 Xmax = 5000;
+    int32 Ymin = -5000;
+    int32 Ymax = 5000;
+    int32 Zmin = 0;
+    int32 Zmax = 5000;
+    FVector v = FVector();
+    if (agent->GetActorLocation().X < Xmin) {
+        v.X = 10;
+    } else if (agent->GetActorLocation().X > Xmax) {
+        v.X = -10;
+    }
+
+    if (agent->GetActorLocation().Y < Ymin) {
+        v.Y = 10;
+    } else if (agent->GetActorLocation().Y > Ymax) {
+        v.Y = -10;
+    }
+
+    if (agent->GetActorLocation().Z < Zmin) {
+        v.Z = 10;
+    } else if (agent->GetActorLocation().Z > Zmax) {
+        v.Z = -10;
+    }
+    
+    return v;
 }
