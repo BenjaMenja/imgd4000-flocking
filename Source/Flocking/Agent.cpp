@@ -4,7 +4,7 @@ AAgent::AAgent(){
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AgentMesh"));	
 	RootComponent = Mesh;
-	Velocity = FVector(0.f);
+	Velocity = FVector(5.f);
 }
 
 void AAgent::BeginPlay(){
